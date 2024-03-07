@@ -1,6 +1,7 @@
 import { cartModel } from "../../../Database/models/cart.model.js"
 import { orderModel } from "../../../Database/models/order.model.js"
 import { productModel } from "../../../Database/models/product.model.js"
+import { userModel } from "../../../Database/models/user.model.js"
 import { catchError } from "../../middleware/catchError.js"
 import { AppError } from "../../utils/AppError.js"
 import Stripe from "stripe"
@@ -85,7 +86,7 @@ const createOnlineOrder=catchError(async (request, response) => {
   
     // Handle the event
     if(event.type="checkout.session.completed"){
-        const checkoutSessionCompleted = event.data.object;
+        cart(event.data.object)
         console.log("create order here...");
     }else{
         console.log(`unhandled event type ${event.type}`);
@@ -94,11 +95,44 @@ const createOnlineOrder=catchError(async (request, response) => {
     response.send();
   })
 
+
+
 export {
     createCashOrder,
     getSpecificOrder,
     getALOrders,
     createCheckOutSession,
     createOnlineOrder
+}
+
+
+async function cart(){
+    let cart= await cartModel.findById(e.client_reference_id)
+    if(!cart) return next(new AppError(`this cart not found`,404))
+    let user= await userModel.findOne({email:e.customer_email})
+    let order= new orderModel({
+        user:user._id,
+        orderItems:cart.cartItems,
+        shippingAddress:e.metadata.shippingAddress,
+        totalOrderPrice:e.amount_total/100,
+        paymentType:"card",
+        isPaid:true,
+        PaidAt:Date.now()
+    })
+    await order.save()
+    let options=cart.cartItems.map((prod)=>{
+        return (
+            {  
+                updateOne :{
+                "filter":{_id:prod.product},
+                "update": {$inc:{sold:prod.quantity,quantity:-prod.quantity}},
+                }
+            }
+        )
+    })
+    await productModel.bulkWrite(options)
+    await cartModel.findOneAndDelete({user:user._id})
+    res.json({message:"your order created successfully",order})
+
 }
 
