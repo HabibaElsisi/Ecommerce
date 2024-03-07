@@ -4,7 +4,7 @@ import { productModel } from "../../../Database/models/product.model.js"
 import { catchError } from "../../middleware/catchError.js"
 import { AppError } from "../../utils/AppError.js"
 import Stripe from "stripe"
-const stripe= new Stripe(process.env.STRIPE_SECRET_KEY)
+const stripe= new Stripe("sk_test_51OrIg5BzkFI1agDRAyCOLN8bQlaxHlLjdkpbsJNpDPrh46hsEnIqAY8XoGI24fRhKVr8U51rj6Pa5pdkJo88WwYT00FTnCRyos")
 
 const createCashOrder=catchError(async(req,res,next)=>{
     let cart= await cartModel.findById(req.params.id)
@@ -73,10 +73,32 @@ const createCheckOutSession=catchError(async(req,res,next)=>{
 }
 )
 
+const createOnlineOrder=catchError(async (request, response) => {
+    const sig = request.headers['stripe-signature'].toString();
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(request.body, sig, "whsec_aotSjr60FAOjhGBLDKhhZXVmZB48ozDk");
+    } catch (err) {
+      response.status(400).send(`Webhook Error: ${err.message}`);
+      return;
+    }
+  
+    // Handle the event
+    if(event.type="checkout.session.completed"){
+        const checkoutSessionCompleted = event.data.object;
+        console.log("create order here...");
+    }else{
+        console.log(`unhandled event type ${event.type}`);
+    }
+    // Return a 200 response to acknowledge receipt of the event
+    response.send();
+  })
+
 export {
     createCashOrder,
     getSpecificOrder,
     getALOrders,
-    createCheckOutSession
+    createCheckOutSession,
+    createOnlineOrder
 }
 
