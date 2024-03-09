@@ -4,11 +4,13 @@ import {addProduct, deleteProduct, getAllProducts, getSingleProduct, updateProdu
 import { validation } from "../../middleware/validation.js"
 import { addProductVal, paramsIdVal, updateProductVal } from "./product.validation.js"
 import reviewRouter from "../review/review.routes.js"
+import { protectedRoutes } from "../../middleware/protectedRoutes.js"
+import { allowedTo } from "../../middleware/allowedTo.js"
 
 const productRouter=express.Router({mergeParams:true})
 productRouter.use("/:id/review",reviewRouter)
 productRouter.route("/")
-    .post(uploadFields([
+    .post(protectedRoutes,allowedTo("admin"),uploadFields([
         {name:"imgCover",maxCount:1},
         {name:"images",maxCount:10}
 
@@ -17,12 +19,12 @@ productRouter.route("/")
 
 productRouter.route("/:id")
     .get(validation(paramsIdVal),getSingleProduct)
-    .put(uploadFields([
+    .put(protectedRoutes,allowedTo("admin"),uploadFields([
         {name:"imgCover",maxCount:1},
         {name:"images",maxCount:10}
 
     ]),validation(updateProductVal),updateProduct)
-    .delete(validation(paramsIdVal),deleteProduct)
+    .delete(protectedRoutes,allowedTo("admin"),validation(paramsIdVal),deleteProduct)
 
 
 export default productRouter

@@ -9,6 +9,8 @@ import { ApiFeature } from "../../utils/apiFeature.js"
 
 
 const addSubcategory=catchError(async(req,res,next)=>{
+    let category = await categoryModel.findById(req.body.category)
+    if(!category)return next(new AppError(`this category not found`,404))
     let isSubcategoryExists=await subCategoryModel.findOne({name:req.body.name})
     if(isSubcategoryExists)return next(new AppError(`this Subcategory already exists`,404))
     req.body.slug=slugify(req.body.name)
@@ -19,7 +21,10 @@ const addSubcategory=catchError(async(req,res,next)=>{
 
 const getAllSubCategories=catchError(async(req,res,next)=>{
     let filterObject={}
+    
     if(req.params.category){
+        let category= await categoryModel.findById(req.params.category)
+        if(!category)return next(new AppError(`this category not found`,404))
         filterObject.category=req.params.category
     }
 
@@ -43,8 +48,10 @@ const updateSubCategory=catchError(async(req,res,next)=>{
     if(req.body.name){
         req.body.slug=slugify(req.body.name)
     }
-
-   
+    if(req.body.category){
+        let category= await categoryModel.findById(req.body.category)
+        if(!category) return next(new AppError(`this category not found`,404))
+    }   
     let subcategory= await subCategoryModel.findByIdAndUpdate(req.params.id,req.body,{new:true})
     if(!subcategory) return next(new AppError(`this subcategory not found `,404))
    

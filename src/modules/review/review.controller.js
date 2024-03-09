@@ -1,3 +1,4 @@
+import { productModel } from "../../../Database/models/product.model.js"
 import { reviewModel } from "../../../Database/models/review.model.js"
 import { catchError } from "../../middleware/catchError.js"
 import { AppError } from "../../utils/AppError.js"
@@ -5,6 +6,8 @@ import { ApiFeature } from "../../utils/apiFeature.js"
 import { deleteOne } from "../handlers/handle.js"
 
 const addReview=catchError(async(req,res,next)=>{
+   let product=await productModel.findById(req.body.product)
+   if(!product) return next(new AppError(`this product not found`,404))
     req.body.user=req.user._id
     let isReviewExists=await reviewModel.findOne({user:req.user._id,product:req.body.product})
     if(isReviewExists) return next (new AppError('you added review before on this product',404))

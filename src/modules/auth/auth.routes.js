@@ -9,7 +9,7 @@ let authRouter=express.Router()
 authRouter.post("/signUp",validation(signUpVal),isEmailExists,signUp)
 authRouter.post("/signIn",validation(signinVal),signin)
 authRouter.get('/verify/:token',verify)
-
+authRouter.patch("/changePassword",protectedRoutes,allowedTo("user","admin"),validation(changePasswordVal),changePassword)
 
 
 

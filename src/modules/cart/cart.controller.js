@@ -34,8 +34,9 @@ const addToCart=catchError(async(req,res,next)=>{
     }else{
     let item= isCartExists.cartItems.find((item)=>item.product==req.body.product)
     if(item) {
-        if(item.quantity>=product.quantity)return next(new AppError(`sold out`))
         item.quantity+=req.body.quantity||1
+        if(item.quantity>product.quantity)return next(new AppError(`sold out`))
+        
     }else isCartExists.cartItems.push(req.body)
     
     calcTotalPrice(isCartExists)
@@ -64,7 +65,7 @@ const updateQuantity=catchError(async(req,res,next)=>{
     let cart=await cartModel.findOne({user:req.user._id})
     if(!cart) return next(new AppError(`cart not found`,404))
     let item = cart.cartItems.find((item) => {
-        item.product == req.params.id
+        return item.product.toString() === req.params.id.toString()
     });
     if(!item) return next(new AppError(`item not found`,404))
     if(product.quantity<req.body.quantity) return next(new AppError(`sold out`))
@@ -72,7 +73,6 @@ const updateQuantity=catchError(async(req,res,next)=>{
     calcTotalPrice(cart)
     await cart.save()
     res.status(200).json({message:"quantity updated successfully",cart})
-
 })
 
 const getLoggedInUserCart=catchError(async(req,res,next)=>{

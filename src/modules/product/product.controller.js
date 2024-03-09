@@ -5,10 +5,17 @@ import { AppError } from "../../utils/AppError.js"
 import { catchError } from "../../middleware/catchError.js"
 import { deleteOne } from "../handlers/handle.js"
 import { ApiFeature } from "../../utils/apiFeature.js"
+import { categoryModel } from "../../../Database/models/catrgory.model.js"
+import { subCategoryModel } from "../../../Database/models/subCategory.model.js"
 
 
 
 const addProduct=catchError(async(req,res,next)=>{
+    let category= await categoryModel.findById(req.body.category)
+    if(!category)return next(new AppError(`this category not found`,404))
+
+    let subCategory= await subCategoryModel.findById(req.body.subcategory)
+    if(!subCategory)return next(new AppError(`this subCategory not found`,404))
     let isProductExists=await productModel.findOne({title:req.body.title})
     if(isProductExists)return next(new AppError(`this Product already exists`,404))
 
@@ -41,22 +48,31 @@ const getSingleProduct=catchError(async(req,res,next)=>{
 
 })
 
-const updateProduct=catchError(async(req,res,next)=>{
-    if(req.body.title){
-        req.body.slug=slugify(req.body.title)
+const updateProduct = catchError(async (req, res, next) => {
+    if (req.body.title) {
+        req.body.slug = slugify(req.body.title);
     }
-    if(req.files.imgCover){
-        req.body.imgCover=req.files.imgCover[0].filename
+    if (req.files.imgCover) {
+        req.body.imgCover = req.files.imgCover[0].filename;
     }
-        
-     if(req.files.images){ 
-        req.body.images=req.files.images.map((img)=>img.filename)
+
+    if (req.files.images) {
+        req.body.images = req.files.images.map((img) => img.filename);
     }
-    let product= await productModel.findByIdAndUpdate(req.params.id,req.body,{new:true})
-    if(!product) return next(new AppError(`this catergory not found `,404))
-   
-    res.json({message:"Product updated successfully",Product})
-})
+    if (req.body.category) {
+        let category = await categoryModel.findById(req.body.category);
+        if (!category) return next(new AppError(`This category not found`, 404));
+    }
+    if (req.body.subcategory) {
+        let subcategory = await subCategoryModel.findById(req.body.subcategory);
+        if (!subcategory) return next(new AppError(`This subcategory not found`, 404));
+    }
+
+    let product = await productModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!product) return next(new AppError(`This product not found`, 404));
+
+    res.json({ message: "Product updated successfully", product }); // Changed Product to product
+});
 
 const deleteProduct=deleteOne(productModel)
 
